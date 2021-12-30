@@ -12,7 +12,6 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 
-
 @Entity
 @AttributeOverride(name = "id", column = @Column(name = "user_id"))
 @Table(name = "user")
@@ -29,6 +28,7 @@ public class CustomUser extends BaseEntity {
 		this.roles = roles;
 	}
 	
+	@Column(unique = true)
 	private String username;
 	
 	private String password;
@@ -78,7 +78,7 @@ public class CustomUser extends BaseEntity {
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + Objects.hash(password, roles, username);
+		result = prime * result + Objects.hash(password, username);
 		return result;
 	}
 
@@ -91,8 +91,7 @@ public class CustomUser extends BaseEntity {
 		if (getClass() != obj.getClass())
 			return false;
 		CustomUser other = (CustomUser) obj;
-		return Objects.equals(password, other.password) && Objects.equals(roles, other.roles)
-				&& Objects.equals(username, other.username);
+		return Objects.equals(password, other.password) && Objects.equals(username, other.username);
 	}
 	
 	
