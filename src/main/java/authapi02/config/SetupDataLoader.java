@@ -47,20 +47,14 @@ public class SetupDataLoader implements ApplicationListener<ContextRefreshedEven
 		}
 		
 		// Creation of basic ROLES.
+		// TODO: implement an ENUM that contains this values.
 		createRoleIfNotFound("ROLE_ADMIN");
 		createRoleIfNotFound("ROLE_USER");
 		createRoleIfNotFound("ROLE_STAFF");
 	
 		// Creation of unique admin user.
-		
-		Role adminRole = roleRepository.findByRole("ROLE_ADMIN");
-		CustomUser userAdmin = new CustomUser();
-		userAdmin.setUsername(username);
-		userAdmin.setPassword(bCryptPassEncoder.encode(password));
-		userAdmin.setRoles(new HashSet<Role>(Arrays.asList(adminRole)));
-		userAdmin.setActive(true);
-		customUserRepository.save(userAdmin);
-		
+		createUserIfNotFound();
+
 		alreadySetup = true;
 	}
 	
@@ -74,5 +68,21 @@ public class SetupDataLoader implements ApplicationListener<ContextRefreshedEven
 		}
 		return roleFetched;
 	}
+	
+	@Transactional
+	private CustomUser createUserIfNotFound() {
+		CustomUser userFetched = customUserRepository.findByUsername(username);
+		if (userFetched == null) {
+			Role adminRole = roleRepository.findByRole("ROLE_ADMIN");
+			CustomUser userAdmin = new CustomUser();
+			userAdmin.setUsername(username);
+			userAdmin.setPassword(bCryptPassEncoder.encode(password));
+			userAdmin.setRoles(new HashSet<Role>(Arrays.asList(adminRole)));
+			userAdmin.setActive(true);
+			return customUserRepository.save(userAdmin);
+		}
+		return userFetched;
+	}
+	
 	
 }

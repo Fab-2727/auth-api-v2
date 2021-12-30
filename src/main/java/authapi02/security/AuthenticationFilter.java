@@ -14,17 +14,25 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import authapi02.model.ApiResponseDto;
 import authapi02.model.CustomUser;
+import authapi02.model.ErrorDictionary;
 import authapi02.service.CustomUserService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -35,6 +43,9 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
 	// NOTE: @Autowired doesn't seem to work here, use constructor.
 	
+	
+	// TODO: improve handling of auth exceptions by implementing unsuccessfulAuthentication from AbstractAuthenticationProcessingFilter
+	
 	/**
 	 * As we are using HS512, this string must be of no less than 512 bits
 	 */
@@ -42,6 +53,8 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 	private String secret;
 	private long expirationTime;
 	private CustomUserService customUserService;
+	
+	private static Logger logger = LoggerFactory.getLogger(AuthenticationFilter.class);
 	
 	private static Map<String, Object> headerMap = new HashMap<String, Object>();
 	private final static ObjectMapper objectMapper = new ObjectMapper();
@@ -56,7 +69,7 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 		headerMap.put("typ", "JWT");
 		headerMap.put("alg", SignatureAlgorithm.HS512.getValue());
 	}
-
+	
 	@Override
 	public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
 			throws AuthenticationException { 
@@ -89,7 +102,7 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 		// java.lang.NoSuchMethodError: 'int io.jsonwebtoken.SignatureAlgorithm.getMinKeyLength()'
 		// The above error was solved deleting the 'io.jsonwebtoken/jjwt/0.9.1' dependency from POM
 		
-		Date exp = new Date(System.currentTimeMillis() + expirationTime);
+		Date exp = new Date(System.currentTimeMillis() + (this.expirationTime * 1000L));
 		Key key = Keys.hmacShaKeyFor(secret.getBytes());
 		Claims claims = Jwts.claims()
 						.setSubject( ((User) auth.getPrincipal()).getUsername())

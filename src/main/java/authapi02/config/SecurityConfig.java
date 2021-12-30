@@ -15,12 +15,14 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.FilterInvocation;
 import org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import authapi02.security.AuthenticationFilter;
 import authapi02.security.AuthorizationFilter;
+import authapi02.security.CustomAuthenticationFailureHandler;
 import authapi02.service.CustomUserService;
 
 
@@ -60,8 +62,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.POST, "/api/v1/register").hasAuthority("ADMIN")
                 .anyRequest().authenticated()
                 .and()
-                .addFilter(new AuthenticationFilter(authenticationManager(),secret,expirationTime, customUserService))
-                .addFilter(new AuthorizationFilter(authenticationManager()))
+                .addFilter(new AuthenticationFilter(authenticationManager(),secret, expirationTime, customUserService))
+                .addFilter(new AuthorizationFilter(authenticationManager(),customUserService, secret))
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
     }
     
@@ -78,6 +80,5 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     public void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(customUserService).passwordEncoder(passEncoder);
     }
-	
-	
+    
 }
