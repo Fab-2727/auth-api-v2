@@ -16,7 +16,8 @@ import authapi02.repository.CustomUserRepository;
 import authapi02.repository.RoleRepository;
 
 /**
- * This class loads all the necessary data.
+ * This class inserts the ROLES in the database if necessary.<br>
+ * Also, it creates an admin and normal user.
  *
  */
 @Component
@@ -26,8 +27,12 @@ public class SetupDataLoader implements ApplicationListener<ContextRefreshedEven
 	
 	/* 	ADMIN USER	*/
 	// TODO: des-hardcode this
-	private String username = "admin";
-	private String password = "admin";
+	private String usernameAdmin = "admin";
+	private String passwordAdmin = "admin";
+	
+	// TODO: des-hardcode this
+	private String usernameUser = "user";
+	private String passwordUser = "1234";
 	
 	@Autowired
 	private CustomUserRepository customUserRepository;
@@ -41,7 +46,6 @@ public class SetupDataLoader implements ApplicationListener<ContextRefreshedEven
 	@Override
 	@Transactional
 	public void onApplicationEvent(ContextRefreshedEvent event) {
-		
 		if (alreadySetup) {
 			return;
 		}
@@ -53,8 +57,10 @@ public class SetupDataLoader implements ApplicationListener<ContextRefreshedEven
 		createRoleIfNotFound("ROLE_STAFF");
 	
 		// Creation of unique admin user.
-		createUserIfNotFound();
-
+		createAdminUserIfNotFound();
+		// Creation of normal user.
+		createNormalUserIfNotFound();
+		
 		alreadySetup = true;
 	}
 	
@@ -70,16 +76,31 @@ public class SetupDataLoader implements ApplicationListener<ContextRefreshedEven
 	}
 	
 	@Transactional
-	private CustomUser createUserIfNotFound() {
-		CustomUser userFetched = customUserRepository.findByUsername(username);
+	private CustomUser createAdminUserIfNotFound() {
+		CustomUser userFetched = customUserRepository.findByUsername(usernameAdmin);
 		if (userFetched == null) {
 			Role adminRole = roleRepository.findByRole("ROLE_ADMIN");
 			CustomUser userAdmin = new CustomUser();
-			userAdmin.setUsername(username);
-			userAdmin.setPassword(bCryptPassEncoder.encode(password));
+			userAdmin.setUsername(usernameAdmin);
+			userAdmin.setPassword(bCryptPassEncoder.encode(passwordAdmin));
 			userAdmin.setRoles(new HashSet<Role>(Arrays.asList(adminRole)));
 			userAdmin.setActive(true);
 			return customUserRepository.save(userAdmin);
+		}
+		return userFetched;
+	}
+	
+	@Transactional
+	private CustomUser createNormalUserIfNotFound() {
+		CustomUser userFetched = customUserRepository.findByUsername(usernameUser);
+		if (userFetched == null) {
+			Role roles = roleRepository.findByRole("ROLE_USER");
+			CustomUser user = new CustomUser();
+			user.setUsername(usernameUser);
+			user.setPassword(bCryptPassEncoder.encode(passwordUser));
+			user.setRoles(new HashSet<Role>(Arrays.asList(roles)));
+			user.setActive(true);
+			return customUserRepository.save(user);
 		}
 		return userFetched;
 	}
