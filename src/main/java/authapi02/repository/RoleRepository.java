@@ -12,7 +12,6 @@ public interface RoleRepository extends JpaRepository<Role, Long> {
 	
 	public Role findByRole(String role);
 	
-	//TODO test this query
 	@Query(value = "SELECT role.* FROM user "
 			 + "INNER JOIN user_role ON user_role.user_id = user.user_id "
 			 + "INNER JOIN role ON role.role_id = user_role.role_id " , nativeQuery = true)
