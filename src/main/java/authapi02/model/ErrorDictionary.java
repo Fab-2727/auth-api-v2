@@ -94,10 +94,18 @@ public enum ErrorDictionary {
 		return this.httpStatus;
 	}
 	
+	/**
+	 * Out of the box ResponseEntity with a {@link ApiResponseDto} as the body,
+	 * @return
+	 */
 	public ResponseEntity<ApiResponseDto> getResponseEntity() {
 		return ResponseEntity.status(this.getHttpStatus()).body(new ApiResponseDto(this));
 	}
 	
+	/**
+	 * Out of the box ResponseEntity with a {@link ApiResponseDto} (in JSON format) as the body.
+	 * @return
+	 */
 	public ResponseEntity<String> getResponseEntityStr() {
 		return ResponseEntity.status(this.getHttpStatus()).body(new ApiResponseDto(this).toString());
 	}

@@ -35,18 +35,18 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	private CustomUserService customUserService;
 	private BCryptPasswordEncoder passEncoder = new BCryptPasswordEncoder();
 	
-	@Value("${secret.key}")
+	@Value("${token.secret.key}")
 	private String secret;
-	@Value("${expiration.time}")
+	@Value("${token.expiration.time}")
 	private long expirationTime;
 	
+	@Value("${security.role.hierarchy}")
+	private String roleHierarchyStr;
 	
 	@Bean
 	public RoleHierarchy roleHierarchy() {
 		RoleHierarchyImpl roleHierarchy = new RoleHierarchyImpl();
-		//TODO des-hardcode this string
-		String hierarchy = "ROLE_ADMIN > ROLE_STAFF ROLE_STAFF > ROLE_USER";
-		roleHierarchy.setHierarchy(hierarchy);
+		roleHierarchy.setHierarchy(this.roleHierarchyStr);
 		return roleHierarchy;
 	}
 
@@ -80,8 +80,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         return source;
     }
     
-    // As this method is override, a "local" autheticationManager is being build, a.k.a, a child of
-    // the global one. If we desire this to be the global one, we must use @Autowired instead of @Override.
+    // 
+    // the global one. 
+    /**
+     * As this method is overrides configure, a "local" autheticationManager is being build, a.k.a, a child of the global one.<br>
+     * If we want this to be the global one, we must use @Autowired instead of @Override.
+     */
     @Override
     public void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(customUserService).passwordEncoder(passEncoder);

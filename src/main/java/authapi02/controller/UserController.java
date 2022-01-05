@@ -1,5 +1,7 @@
 package authapi02.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,7 @@ import authapi02.service.CustomUserService;
 @RequestMapping("/api/user")
 public class UserController {
 
+	//private final static Logger logger = LoggerFactory.getLogger(UserController.class);
 	
 	@Autowired
 	CustomUserService customUserService;
@@ -26,7 +29,6 @@ public class UserController {
 	@Secured("ROLE_ADMIN")
 	@PostMapping(path = "/register", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> registerUser(@RequestBody CustomUser user) {
-		System.out.println("Request received: " + user.toString());
 		customUserService.createUser(user);
 		return ResponseEntity.ok(null);
 	}

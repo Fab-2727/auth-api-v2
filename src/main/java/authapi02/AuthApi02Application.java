@@ -10,6 +10,13 @@ public class AuthApi02Application {
 		SpringApplication.run(AuthApi02Application.class, args);
 	}
 	
+	/**
+	 * This method returns a more comprehensive exception log.
+	 * The final message contains the exception's class, the message and the file name, as well as the method and the line were the exception occurred.
+	 * If the exception has a cause, then it will be logged.
+	 * @param e
+	 * @return exceptionDescription
+	 */
 	public static String getExceptionDescriptionForLogging(Throwable e) {
 		if (e == null) {
 			return "";
@@ -25,11 +32,18 @@ public class AuthApi02Application {
 		
 	}
 	
+	/**
+	 * Helper method
+	 */
 	public static String getExceptionClassAndMessage(Throwable e) {
 		String exceptionClassAndMessage = e.getClass().getSimpleName() + " : " + e.getMessage();
 		return exceptionClassAndMessage;
 	}
 
+	
+	/**
+	 * Helper method
+	 */
 	public static String getExceptionInfo(Throwable e) {
 		if (e == null) {
 			return "";

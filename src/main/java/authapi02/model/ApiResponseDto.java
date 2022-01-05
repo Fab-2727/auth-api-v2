@@ -7,6 +7,11 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * A basic DTO for returning more comprehensive responses to the consumer.
+ * 
+ * @author Fabrizio Sosa
+ */
 @JsonInclude(Include.NON_EMPTY)
 public class ApiResponseDto {
 	
@@ -78,6 +83,9 @@ public class ApiResponseDto {
 		this.description = description;
 	}
 	
+	/**
+	 * Returns object as a JSON string.
+	 */
 	@Override
 	public String toString() {
 		try {
