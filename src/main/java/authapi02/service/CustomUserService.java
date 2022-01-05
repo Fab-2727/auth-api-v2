@@ -35,7 +35,6 @@ public class CustomUserService implements UserDetailsService {
 
 	@Transactional
 	public CustomUser createUser (CustomUser user) {
-		
 		user.setPassword(bCryptPassEncoder.encode(user.getPassword()));
 		user.setActive(true);
 		// By default, the role is going to be 'USER'. It means that it has access to all endpoints, except for those that require an 'ADMIN' role.
@@ -50,14 +49,13 @@ public class CustomUserService implements UserDetailsService {
 		return getUserAuthority(roleRepository.getUserRolesByUser(user));
 	}
 	
-	@SuppressWarnings("unused")
 	@Transactional
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 		CustomUser userFetched = customUserRepository.findByUsername(username);
-		List<GrantedAuthority> grantedAuthorities = CustomUserService.getUserAuthority(userFetched.getRoles());
 		
 		if (userFetched != null) {
+			List<GrantedAuthority> grantedAuthorities = CustomUserService.getUserAuthority(userFetched.getRoles());
 			return new User(username, userFetched.getPassword(), userFetched.isActive(), true, true, true, grantedAuthorities);
 		} else {
 			return null;
