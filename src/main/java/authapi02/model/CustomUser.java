@@ -28,9 +28,10 @@ public class CustomUser extends BaseEntity {
 		this.roles = roles;
 	}
 	
-	@Column(unique = true)
+	@Column(unique = true, nullable = false, length = 30)
 	private String username;
 	
+	@Column(nullable = false, length = 200)
 	private String password;
 
 	@ManyToMany(cascade = CascadeType.MERGE)
@@ -66,7 +67,13 @@ public class CustomUser extends BaseEntity {
 	public void addRole(Role role) {
 		this.roles.add(role);
 	}
-
+	
+	public boolean isEmpty() {
+		if (this.getUsername() != null && !this.getUsername().equals("") && this.getPassword() != null && !this.getPassword().equals("") ) {
+			return false;
+		} 
+		return true;
+	}
 	
 	
 	@Override

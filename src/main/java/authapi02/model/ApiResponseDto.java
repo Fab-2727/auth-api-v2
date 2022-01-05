@@ -2,41 +2,80 @@ package authapi02.model;
 
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+@JsonInclude(Include.NON_EMPTY)
 public class ApiResponseDto {
 	
 	private static ObjectMapper mapper = new ObjectMapper();
 	
 	private String message;
-	private String httpStatus;
-	private int httpCode;
+	private int http_code;
+	private String http_status;
+	private String description;
+	
+	// Default constructor
+	public ApiResponseDto() {
+		super();
+	}
+
+	public ApiResponseDto(String message, int http_code, String http_status, String description) {
+		super();
+		this.message = message;
+		this.http_code = http_code;
+		this.http_status = http_status;
+		this.description = description;
+	}
 	
 	public ApiResponseDto(ErrorDictionary error) {
 		super();
 		this.message = error.getReason();
-		this.httpCode = error.getHttpStatus().value();
-		this.httpStatus = error.getHttpStatus().getReasonPhrase();
-		
+		this.http_code = error.getHttpStatus().value();
+		this.http_status = error.getHttpStatus().getReasonPhrase();
 	}
+
+	/*
+	 * More descriptive object.
+	 */
+	public ApiResponseDto(ErrorDictionary error, String description) {
+		super();
+		this.message = error.getReason();
+		this.http_code = error.getHttpStatus().value();
+		this.http_status = error.getHttpStatus().getReasonPhrase();
+		this.description = description;
+	}
+
 	public String getMessage() {
 		return message;
 	}
 	public void setMessage(String message) {
 		this.message = message;
 	}
-	public String getHttpStatus() {
-		return httpStatus;
+	
+	public int getHttp_code() {
+		return http_code;
 	}
-	public void setHttpStatus(String httpStatus) {
-		this.httpStatus = httpStatus;
+
+	public void setHttp_code(int http_code) {
+		this.http_code = http_code;
 	}
-	public int getHttpCode() {
-		return httpCode;
+
+	public String getHttp_status() {
+		return http_status;
 	}
-	public void setHttpCode(int httpCode) {
-		this.httpCode = httpCode;
+
+	public void setHttp_status(String http_status) {
+		this.http_status = http_status;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+	public void setDescription(String description) {
+		this.description = description;
 	}
 	
 	@Override
@@ -47,12 +86,11 @@ public class ApiResponseDto {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(httpCode, httpStatus, message);
+		return Objects.hash(description, http_code, http_status, message);
 	}
-
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -62,8 +100,7 @@ public class ApiResponseDto {
 		if (getClass() != obj.getClass())
 			return false;
 		ApiResponseDto other = (ApiResponseDto) obj;
-		return httpCode == other.httpCode && Objects.equals(httpStatus, other.httpStatus)
-				&& Objects.equals(message, other.message);
+		return Objects.equals(description, other.description) && http_code == other.http_code
+				&& Objects.equals(http_status, other.http_status) && Objects.equals(message, other.message);
 	}
-	
 }
