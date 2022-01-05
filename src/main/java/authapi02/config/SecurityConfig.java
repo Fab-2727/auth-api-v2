@@ -4,28 +4,30 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.access.expression.SecurityExpressionHandler;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.web.FilterInvocation;
 import org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler;
-import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import authapi02.security.AuthenticationFilter;
 import authapi02.security.AuthorizationFilter;
-import authapi02.security.CustomAuthenticationFailureHandler;
+import authapi02.security.CustomAuthenticationEntryPoint;
 import authapi02.service.CustomUserService;
 
 
+@EnableGlobalMethodSecurity(
+securedEnabled = true,
+prePostEnabled = true,
+jsr250Enabled = true)
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
@@ -43,12 +45,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	public RoleHierarchy roleHierarchy() {
 		RoleHierarchyImpl roleHierarchy = new RoleHierarchyImpl();
 		//TODO des-hardcode this string
-		String hierarchy = "ROLE_ADMIN > ROLE_STAFF \n ROLE_STAFF > ROLE_USER";
+		String hierarchy = "ROLE_ADMIN > ROLE_STAFF ROLE_STAFF > ROLE_USER";
 		roleHierarchy.setHierarchy(hierarchy);
 		return roleHierarchy;
 	}
 
-    private SecurityExpressionHandler<FilterInvocation> webExpressionHandler() {
+	@Bean
+    public DefaultWebSecurityExpressionHandler webExpressionHandler() {
     	DefaultWebSecurityExpressionHandler defaultWebSecurityExpressionHandler = new DefaultWebSecurityExpressionHandler();
         defaultWebSecurityExpressionHandler.setRoleHierarchy(roleHierarchy());
         return defaultWebSecurityExpressionHandler;
@@ -56,10 +59,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http.cors().and().csrf().disable()
+    	
+    	http.exceptionHandling().authenticationEntryPoint(new CustomAuthenticationEntryPoint())
+    	.and()
+    	.cors().and().csrf().disable()
         		.authorizeRequests()
-        		//.expressionHandler(webExpressionHandler()) //TODO: validate this
-                .antMatchers(HttpMethod.POST, "/api/v1/register").hasAuthority("ADMIN")
+        		.expressionHandler(webExpressionHandler())
+                .antMatchers(HttpMethod.POST, "/api/v1/register").hasRole("ADMIN")
                 .anyRequest().authenticated()
                 .and()
                 .addFilter(new AuthenticationFilter(authenticationManager(),secret, expirationTime, customUserService))
@@ -75,7 +81,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
     
     // As this method is override, a "local" autheticationManager is being build, a.k.a, a child of
-    // the global one. If we desire this to be the global one, we must use @Autowired instead of @Override
+    // the global one. If we desire this to be the global one, we must use @Autowired instead of @Override.
     @Override
     public void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(customUserService).passwordEncoder(passEncoder);
