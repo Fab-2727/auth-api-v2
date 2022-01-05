@@ -3,7 +3,6 @@ package authapi02.security;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.Key;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -16,21 +15,20 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import authapi02.model.ApiResponseDto;
+import authapi02.AuthApi02Application;
 import authapi02.model.CustomUser;
 import authapi02.model.ErrorDictionary;
 import authapi02.service.CustomUserService;
@@ -40,24 +38,20 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 
 public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
+	
+	private static final Logger logger = LoggerFactory.getLogger(AuthenticationFilter.class);
 
-	// NOTE: @Autowired doesn't seem to work here, use constructor.
-	
-	
-	// TODO: improve handling of auth exceptions by implementing unsuccessfulAuthentication from AbstractAuthenticationProcessingFilter
-	
 	/**
 	 * As we are using HS512, this string must be of no less than 512 bits
 	 */
-	private AuthenticationManager authenticationManager;
 	private String secret;
+	private AuthenticationManager authenticationManager;
 	private long expirationTime;
 	private CustomUserService customUserService;
 	
-	private static Logger logger = LoggerFactory.getLogger(AuthenticationFilter.class);
 	
 	private static Map<String, Object> headerMap = new HashMap<String, Object>();
-	private final static ObjectMapper objectMapper = new ObjectMapper();
+	private static final ObjectMapper objectMapper = new ObjectMapper();
 	
 	public AuthenticationFilter(AuthenticationManager authenticationManager, String secret, long expirationTime, CustomUserService customUserService) {
 		super();
@@ -74,19 +68,36 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 	public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
 			throws AuthenticationException { 
 		try {
-			InputStream inputStream = request.getInputStream();
-			if (inputStream != null) {
+				InputStream inputStream = request.getInputStream();
 				CustomUser customUser = objectMapper.readValue(inputStream, CustomUser.class);
-				// TODO validate this
 				List<GrantedAuthority> grantedAuthorities = customUserService.getUserRolesByUser(customUser);
-				System.out.println("AUTH SIZE: " + grantedAuthorities.size());
-				
+
 				return authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(customUser.getUsername(),
 						customUser.getPassword(), grantedAuthorities));
-				
-			}
-			return authenticationManager.authenticate(new UsernamePasswordAuthenticationToken("", "", Collections.emptyList()));
+		// Catching exceptions
+		} catch (DisabledException e) {
+			logger.error(ErrorDictionary.DISABLED_ACCOUNT.toString());
+			logger.error(AuthApi02Application.getExceptionDescriptionForLogging(e));
+			throw new RuntimeException(e);
+		} catch (BadCredentialsException e) {
+			logger.error(ErrorDictionary.BAD_CREDENTIALS.toString());
+			logger.error(AuthApi02Application.getExceptionDescriptionForLogging(e));
+			request.setAttribute("BAD_CREDENTIALS", e.getMessage());
+			throw new RuntimeException(e);
+		} catch (LockedException e) {
+			logger.error(ErrorDictionary.LOCKED_ACCOUNT.toString());
+			logger.error(AuthApi02Application.getExceptionDescriptionForLogging(e));
+			throw new RuntimeException(e);
+		} catch (IllegalStateException | IOException e) {
+			logger.error(ErrorDictionary.UNEXPECTED_ERROR.toString());
+			logger.error(AuthApi02Application.getExceptionDescriptionForLogging(e));
+			throw new RuntimeException(e);
 		} catch (Exception e) {
+			logger.error(ErrorDictionary.UNEXPECTED_ERROR.toString());
+			logger.error(AuthApi02Application.getExceptionDescriptionForLogging(e));
+			if (e.getClass().getSimpleName().equalsIgnoreCase("InternalAuthenticationServiceException")) {
+				request.setAttribute("UNKNOWN_USER", "UNKNOWN_USER");
+			}
 			throw new RuntimeException(e);
 		}
 	}
@@ -115,7 +126,6 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 						.setExpiration(exp)
 						.compact();
 		
-		// WORKS
 		res.setHeader("Authorization", token);
 		res.getWriter().write("{\"bearer\": \""+ token + "\"}");
 		res.getWriter().flush();
