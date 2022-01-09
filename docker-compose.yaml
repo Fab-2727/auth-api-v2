@@ -1,0 +1,48 @@
+# docker-compose
+version: '3.8'
+services:
+  auth-api:
+    build:
+      context: .
+    image: auth-api:v01
+    ports:
+    # host:container
+      - 8081:8081
+    environment:
+      - SERVER_PORT=8081
+      - JPA_HIBERNATE_DDL=update
+      #- DATABASE_URL=jdbc:mysql://localhost:3306/auth-2-api
+      - DATABASE_URL=jdbc:mysql://mysqlserver:3308/auth_2_api
+      - DATABASE_USERNAME=root
+      - DATABASE_PASSWORD=root
+      - DATABASE_DRIVER=com.mysql.cj.jdbc.Driver
+      - JPA_HIBERNATE_DIALECT=org.hibernate.dialect.MySQL5Dialect
+      - TOKEN_SECRET=NcRfUjXn2r5u8x/A?D(G-KaPdSgVkYp3s6v9y$$B&E)H@MbQeThWmZq4t7w!z%C*F
+      - TOKEN_EXPIRED_TIME_MS=3600
+      - SECURITY_ROLE_HIERARCHY=ROLE_ADMIN > ROLE_STAFF ROLE_STAFF > ROLE_USER
+      - LOG_LEVEL=INFO
+    volumes:
+    # [SOURCE:]TARGET[:MODE] - source=name or host path | target=container's path
+    #   The actual directory is going to be map to the /auth-api' directory where the container is created.
+    #   In this way, any change in the local directory is going to be commit to the container's
+      - ./:/auth-api
+    command: ./mvnw clean spring-boot:run
+
+  mysqlserver:
+    image: mysql:8.0.23
+    expose:
+      - 3308
+    ports:
+      - 3308:3308
+    environment:
+      - MYSQL_TCP_PORT=3308
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_USER=1234
+      - MYSQL_PASSWORD=1234
+      - MYSQL_DATABASE=auth_2_api # Due to mysql standards, must be 'auth_2_api';
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - mysql_config:/etc/mysql/conf.d
+volumes:
+  mysql_data:
+  mysql_config:
